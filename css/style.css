@@ -16,6 +16,7 @@
   --color-b: #0ea5e9;
   --color-b-light: #e6f6fd;
   --color-point: #f59e0b;
+  --color-offline: #b0b8c4;
   --border: #e2e8f0;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
@@ -101,11 +102,24 @@ main {
 
 /* ---- Equation Card ---- */
 
+.equation-template {
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.2rem 0 0.5rem;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary);
+}
+
+.equation-template .color-m { color: var(--color-m); font-size: 1.2rem; }
+.equation-template .color-b { color: var(--color-b); font-size: 1.2rem; }
+
 .equation-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
 }
 
 .eq-static {
@@ -126,7 +140,7 @@ main {
   padding: 0.35rem 0.4rem;
   border: 2px solid var(--border);
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   text-align: center;
   transition: border-color 0.15s;
@@ -158,28 +172,6 @@ main {
   border-color: var(--color-b);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
 }
-
-.eq-var-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.2rem;
-}
-
-.eq-field-m .eq-var-label { color: var(--color-m); }
-.eq-field-b .eq-var-label { color: var(--color-b); }
-
-.equation-formatted {
-  font-size: 1.3rem;
-  font-weight: 700;
-  text-align: center;
-  padding: 0.35rem 0 0.3rem;
-  letter-spacing: 0.02em;
-}
-
-.equation-formatted .color-m { color: var(--color-m); }
-.equation-formatted .color-b { color: var(--color-b); }
 
 .equation-legend {
   display: flex;
@@ -304,6 +296,10 @@ main {
   background: #fff;
 }
 
+.table-row-offline .table-input {
+  color: var(--color-offline);
+}
+
 .btn-delete {
   background: none;
   border: none;
@@ -340,6 +336,14 @@ main {
 
 .btn:hover {
   background: var(--primary-hover);
+}
+
+.btn-accent {
+  background: var(--color-m);
+}
+
+.btn-accent:hover {
+  background: #cf6e17;
 }
 
 .btn-secondary {

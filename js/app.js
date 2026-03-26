@@ -10,9 +10,9 @@
     if (n < 2) return null;
     var sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
     for (var i = 0; i < n; i++) {
-      var p = points[i];
-      sumX += p.x; sumY += p.y;
-      sumXY += p.x * p.y; sumX2 += p.x * p.x;
+      sumX += points[i].x; sumY += points[i].y;
+      sumXY += points[i].x * points[i].y;
+      sumX2 += points[i].x * points[i].x;
     }
     var denom = n * sumX2 - sumX * sumX;
     if (Math.abs(denom) < 1e-12) return null;
@@ -21,12 +21,37 @@
     var meanY = sumY / n;
     var ssTot = 0, ssRes = 0;
     for (var j = 0; j < n; j++) {
-      var pt = points[j];
-      ssTot += (pt.y - meanY) * (pt.y - meanY);
-      ssRes += (pt.y - (m * pt.x + b)) * (pt.y - (m * pt.x + b));
+      ssTot += (points[j].y - meanY) * (points[j].y - meanY);
+      ssRes += (points[j].y - (m * points[j].x + b)) * (points[j].y - (m * points[j].x + b));
     }
     var r2 = ssTot < 1e-12 ? 1 : 1 - ssRes / ssTot;
     return { m: round(m, 4), b: round(b, 4), r2: round(r2, 6) };
+  }
+
+  /** Least-squares line constrained to pass through points[fixedIdx]. */
+  function constrainedRegression(points, fixedIdx) {
+    var n = points.length;
+    if (n < 2) return null;
+    var x0 = points[fixedIdx].x, y0 = points[fixedIdx].y;
+
+    if (n === 2) {
+      var other = fixedIdx === 0 ? 1 : 0;
+      var dx = points[other].x - x0;
+      if (Math.abs(dx) < 1e-12) return null;
+      var m = (points[other].y - y0) / dx;
+      return { m: round(m, 4), b: round(y0 - m * x0, 4) };
+    }
+
+    var sumDxDy = 0, sumDx2 = 0;
+    for (var i = 0; i < n; i++) {
+      var ddx = points[i].x - x0;
+      var ddy = points[i].y - y0;
+      sumDxDy += ddx * ddy;
+      sumDx2 += ddx * ddx;
+    }
+    if (Math.abs(sumDx2) < 1e-12) return null;
+    var mC = sumDxDy / sumDx2;
+    return { m: round(mC, 4), b: round(y0 - mC * x0, 4) };
   }
 
   function round(v, d) {
@@ -40,6 +65,14 @@
 
   function snapVal(v) {
     return state.snapToInt ? Math.round(v) : v;
+  }
+
+  function isOnLine(px, py, m, b) {
+    return Math.abs(py - (m * px + b)) < 0.15;
+  }
+
+  function randInt(lo, hi) {
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
   }
 
   // ============================================================
@@ -61,7 +94,7 @@
 
     showTriangle: true,
     showSteps: true,
-    snapToInt: false,
+    snapToInt: true,
 
     get m()  { return this._m; },
     get b()  { return this._b; },
@@ -100,16 +133,18 @@
       this._notify(source || 'table');
     },
 
+    /** Move a point and fit the line through it (constrained regression). */
     movePoint: function (index, x, y) {
       x = snapVal(x);
       y = snapVal(y);
       this._points[index] = { x: round(x, 2), y: round(y, 2) };
-      var reg = linearRegression(this._points);
+      var reg = constrainedRegression(this._points, index);
       if (reg) {
         this._m = reg.m;
         this._b = reg.b;
-        this._r2 = reg.r2;
       }
+      var fullReg = linearRegression(this._points);
+      this._r2 = fullReg ? fullReg.r2 : 1;
       this._notify('drag');
     },
 
@@ -125,6 +160,23 @@
       var reg = linearRegression(this._points);
       if (reg) { this._m = reg.m; this._b = reg.b; this._r2 = reg.r2; }
       this._notify('table');
+    },
+
+    randomize: function () {
+      var m = randInt(-5, 5);
+      var b = randInt(-10, 10);
+      var xs = [];
+      var used = {};
+      while (xs.length < 4) {
+        var x = randInt(-8, 12);
+        if (!used[x]) { used[x] = true; xs.push(x); }
+      }
+      xs.sort(function (a, c) { return a - c; });
+      this._points = xs.map(function (x) { return { x: x, y: m * x + b }; });
+      this._m = m;
+      this._b = b;
+      this._r2 = 1;
+      this._notify('reset');
     },
 
     reset: function () {
@@ -144,6 +196,7 @@
   var COLOR_M     = '#e67e22';
   var COLOR_B     = '#0ea5e9';
   var COLOR_POINT = '#f59e0b';
+  var COLOR_OFF   = '#b0b8c4';
   var LABEL_COLOR = '#64748b';
   var STEP_COLOR  = '#94a3b8';
   var POINT_RADIUS = 8;
@@ -273,7 +326,7 @@
   // ---- Y-intercept marker ----
 
   function drawBIntercept() {
-    var m = state.m, b = state.b;
+    var b = state.b;
     var s = toScreen(0, b);
 
     ctx.fillStyle = COLOR_B;
@@ -285,9 +338,7 @@
 
     var label = 'b = ' + fmtN(b);
     ctx.font = 'bold 12px system-ui, sans-serif';
-    ctx.fillStyle = COLOR_B;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(label, s.sx + 14, s.sy);
+    drawLabelWithBG(label, s.sx + 14, s.sy, 'left', 'middle', COLOR_B);
   }
 
   // ---- Rise / Run triangle ----
@@ -303,19 +354,16 @@
     var sB = toScreen(x1, y0);
     var sC = toScreen(x1, y1);
 
-    // run (horizontal)
     ctx.setLineDash([5, 4]);
     ctx.lineWidth = 2.5;
 
     ctx.strokeStyle = COLOR_B;
     ctx.beginPath(); ctx.moveTo(sA.sx, sA.sy); ctx.lineTo(sB.sx, sB.sy); ctx.stroke();
 
-    // rise (vertical)
     ctx.strokeStyle = COLOR_M;
     ctx.beginPath(); ctx.moveTo(sB.sx, sB.sy); ctx.lineTo(sC.sx, sC.sy); ctx.stroke();
     ctx.setLineDash([]);
 
-    // fill triangle lightly
     ctx.fillStyle = 'rgba(59, 130, 246, 0.06)';
     ctx.beginPath();
     ctx.moveTo(sA.sx, sA.sy);
@@ -324,21 +372,34 @@
     ctx.closePath();
     ctx.fill();
 
-    // labels
+    var runLabelY = sA.sy + (m > 0 ? 16 : -10);
+    drawLabelWithBG('run = 1', (sA.sx + sB.sx) / 2, runLabelY, 'center', m > 0 ? 'top' : 'bottom', COLOR_B);
+
+    drawLabelWithBG('rise = ' + fmtN(m), sB.sx + 6, (sB.sy + sC.sy) / 2, 'left', 'middle', COLOR_M);
+  }
+
+  /** Draw text with a semi-opaque white background for readability. */
+  function drawLabelWithBG(text, x, y, align, baseline, color) {
     ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    var metrics = ctx.measureText(text);
+    var tw = metrics.width;
+    var th = 14;
+    var px = 3, py = 2;
 
-    // "run = 1" centered on horizontal leg
-    ctx.fillStyle = COLOR_B;
-    ctx.textAlign = 'center';
-    var runLabelY = sA.sy + (m > 0 ? 16 : -8);
-    ctx.textBaseline = m > 0 ? 'top' : 'bottom';
-    ctx.fillText('run = 1', (sA.sx + sB.sx) / 2, runLabelY);
+    var bx = x - px;
+    if (align === 'center') bx = x - tw / 2 - px;
+    else if (align === 'right') bx = x - tw - px;
+    var by = y - th / 2 - py;
+    if (baseline === 'top') by = y - py;
+    else if (baseline === 'bottom') by = y - th - py;
 
-    // "rise = m" centered on vertical leg
-    ctx.fillStyle = COLOR_M;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('rise = ' + fmtN(m), sB.sx + 6, (sB.sy + sC.sy) / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(bx, by, tw + px * 2, th + py * 2);
+
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
   }
 
   // ---- Step points ----
@@ -367,27 +428,34 @@
 
   function drawDataPoints() {
     var pts = state.points;
+    var m = state.m, b = state.b;
     for (var i = 0; i < pts.length; i++) {
       var p = pts[i];
       var s = toScreen(p.x, p.y);
       var isActive = draggingIdx === i;
+      var onLine = isOnLine(p.x, p.y, m, b);
       var r = isActive ? POINT_RADIUS + 2 : POINT_RADIUS;
 
-      ctx.fillStyle = isActive ? '#f97316' : COLOR_POINT;
+      var fillColor;
+      if (isActive) fillColor = '#f97316';
+      else if (onLine) fillColor = COLOR_POINT;
+      else fillColor = COLOR_OFF;
+
+      ctx.fillStyle = fillColor;
       ctx.beginPath();
       ctx.arc(s.sx, s.sy, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
       ctx.stroke();
 
-      ctx.fillStyle = LABEL_COLOR;
+      ctx.fillStyle = onLine ? LABEL_COLOR : COLOR_OFF;
       ctx.font = '11px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
       ctx.fillText('(' + fmtN(p.x) + ', ' + fmtN(p.y) + ')', s.sx + 12, s.sy - 6);
     }
   }
 
-  // ---- Pointer / drag interaction on data points ----
+  // ---- Pointer / drag interaction ----
 
   function hitTestPoints(sx, sy) {
     var pts = state.points;
@@ -450,18 +518,17 @@
   // ============================================================
 
   var inputM, inputB, sliderM, sliderB, sliderMVal, sliderBVal;
-  var tableBody, eqText, fitInfo, legendMVal, legendBVal;
+  var tableBody, fitInfo, legendMVal, legendBVal;
   var toggleTriangle, toggleSteps, toggleSnap;
 
   function initControls() {
-    inputM    = document.getElementById('input-m');
-    inputB    = document.getElementById('input-b');
-    sliderM   = document.getElementById('slider-m');
-    sliderB   = document.getElementById('slider-b');
+    inputM     = document.getElementById('input-m');
+    inputB     = document.getElementById('input-b');
+    sliderM    = document.getElementById('slider-m');
+    sliderB    = document.getElementById('slider-b');
     sliderMVal = document.getElementById('slider-m-value');
     sliderBVal = document.getElementById('slider-b-value');
     tableBody  = document.querySelector('#data-table tbody');
-    eqText     = document.getElementById('equation-text');
     fitInfo    = document.getElementById('fit-info');
     legendMVal = document.getElementById('legend-m-val');
     legendBVal = document.getElementById('legend-b-val');
@@ -494,6 +561,9 @@
       var lastX = pts.length > 0 ? pts[pts.length - 1].x : 0;
       state.addPoint(lastX + 5);
     });
+    document.getElementById('btn-random').addEventListener('click', function () {
+      state.randomize();
+    });
     document.getElementById('btn-reset').addEventListener('click', function () {
       state.reset();
     });
@@ -508,17 +578,23 @@
     });
     toggleSnap.addEventListener('change', function () {
       state.snapToInt = toggleSnap.checked;
-      sliderM.step = state.snapToInt ? '1' : '0.1';
-      sliderB.step = state.snapToInt ? '1' : '0.5';
-      inputM.step  = state.snapToInt ? '1' : '0.1';
-      inputB.step  = state.snapToInt ? '1' : '0.5';
+      applySnapSettings();
       if (state.snapToInt) {
         state.setLine(Math.round(state.m), Math.round(state.b), 'snap');
       }
     });
 
+    applySnapSettings();
     state.onChange(function (source) { syncUI(source); });
     syncUI('init');
+  }
+
+  function applySnapSettings() {
+    var snap = state.snapToInt;
+    sliderM.step = snap ? '1' : '0.1';
+    sliderB.step = snap ? '1' : '0.5';
+    inputM.step  = snap ? '1' : '0.1';
+    inputB.step  = snap ? '1' : '0.5';
   }
 
   function snapZero(v, threshold) {
@@ -542,8 +618,6 @@
     legendMVal.textContent = round(m, 2);
     legendBVal.textContent = round(b, 2);
 
-    updateFormattedEquation(m, b);
-
     if (source !== 'table-cell') renderTable();
 
     var r2 = state.r2;
@@ -556,24 +630,16 @@
     }
   }
 
-  function updateFormattedEquation(m, b) {
-    var mStr = round(m, 2);
-    var bAbs = round(Math.abs(b), 2);
-    var html = 'y = <span class="color-m">' + mStr + '</span>x';
-    if (Math.abs(b) >= 0.005) {
-      var sign = b >= 0 ? ' + ' : ' \u2212 ';
-      html += sign + '<span class="color-b">' + bAbs + '</span>';
-    }
-    eqText.innerHTML = html;
-  }
-
   function renderTable() {
     tableBody.innerHTML = '';
     var pts = state.points;
+    var m = state.m, b = state.b;
     for (var i = 0; i < pts.length; i++) {
       (function (idx) {
         var p = pts[idx];
+        var onLine = isOnLine(p.x, p.y, m, b);
         var tr = document.createElement('tr');
+        if (!onLine) tr.className = 'table-row-offline';
 
         var tdX = document.createElement('td');
         var inX = document.createElement('input');
