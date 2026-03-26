@@ -606,9 +606,9 @@
   function applySnapSettings() {
     var snap = state.snapToInt;
     sliderM.step = snap ? '1' : '0.1';
-    sliderB.step = snap ? '1' : '0.5';
+    sliderB.step = snap ? '1' : '0.1';
     inputM.step  = snap ? '1' : '0.1';
-    inputB.step  = snap ? '1' : '0.5';
+    inputB.step  = snap ? '1' : '0.1';
   }
 
   function snapZero(v, threshold) {
