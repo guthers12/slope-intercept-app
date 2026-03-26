@@ -11,7 +11,11 @@
   --text-secondary: #64748b;
   --primary: #3b82f6;
   --primary-hover: #2563eb;
-  --accent: #f59e0b;
+  --color-m: #e67e22;
+  --color-m-light: #fdf2e6;
+  --color-b: #0ea5e9;
+  --color-b-light: #e6f6fd;
+  --color-point: #f59e0b;
   --border: #e2e8f0;
   --radius: 12px;
   --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
@@ -74,7 +78,7 @@ main {
   flex: 2;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   min-width: 280px;
   max-width: 380px;
   overflow-y: auto;
@@ -84,56 +88,125 @@ main {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 1.25rem;
+  padding: 1.1rem 1.25rem;
 }
 
 .card h2 {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
-/* ---- Equation ---- */
+/* ---- Equation Card ---- */
 
-.equation-display {
+.equation-row {
   display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
 }
 
-.eq-label {
-  font-size: 1.1rem;
+.eq-static {
+  font-size: 1.15rem;
   font-weight: 600;
+  line-height: 2.4rem;
+  white-space: nowrap;
 }
 
-.eq-input {
-  width: 5rem;
-  padding: 0.35rem 0.5rem;
+.eq-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eq-field .eq-input {
+  width: 4.5rem;
+  padding: 0.35rem 0.4rem;
   border: 2px solid var(--border);
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
-  color: var(--primary);
   transition: border-color 0.15s;
+  background: #fff;
 }
 
-.eq-input:focus {
+.eq-field .eq-input:focus {
   outline: none;
-  border-color: var(--primary);
 }
+
+.eq-field-m .eq-input {
+  color: var(--color-m);
+  border-color: var(--color-m);
+  background: var(--color-m-light);
+}
+
+.eq-field-m .eq-input:focus {
+  border-color: var(--color-m);
+  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
+}
+
+.eq-field-b .eq-input {
+  color: var(--color-b);
+  border-color: var(--color-b);
+  background: var(--color-b-light);
+}
+
+.eq-field-b .eq-input:focus {
+  border-color: var(--color-b);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+.eq-var-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.2rem;
+}
+
+.eq-field-m .eq-var-label { color: var(--color-m); }
+.eq-field-b .eq-var-label { color: var(--color-b); }
 
 .equation-formatted {
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  color: var(--primary);
   text-align: center;
-  padding: 0.5rem 0 0.25rem;
+  padding: 0.35rem 0 0.3rem;
   letter-spacing: 0.02em;
 }
+
+.equation-formatted .color-m { color: var(--color-m); }
+.equation-formatted .color-b { color: var(--color-b); }
+
+.equation-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.swatch-m { background: var(--color-m); }
+.swatch-b { background: var(--color-b); }
 
 /* ---- Sliders ---- */
 
@@ -141,21 +214,25 @@ main {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 
 .slider-row label {
   flex: 0 0 90px;
   font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-weight: 600;
 }
+
+.slider-label-m { color: var(--color-m); }
+.slider-label-b { color: var(--color-b); }
 
 .slider-row input[type="range"] {
   flex: 1;
-  accent-color: var(--primary);
   height: 6px;
 }
+
+.slider-m { accent-color: var(--color-m); }
+.slider-b { accent-color: var(--color-b); }
 
 .slider-value {
   flex: 0 0 3rem;
@@ -164,6 +241,25 @@ main {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text);
+}
+
+/* ---- Learning Aids ---- */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.toggle-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
 /* ---- Table ---- */
@@ -259,7 +355,7 @@ main {
 
 .table-fit-info {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--color-m);
   margin-top: 0.5rem;
   opacity: 0;
   transition: opacity 0.2s;

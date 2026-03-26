@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>Slope-Intercept Explorer</h1>
-    <p class="subtitle">Drag the line, adjust sliders, edit the table &mdash; everything stays in sync.</p>
+    <p class="subtitle">Drag the points, adjust sliders, edit the table &mdash; everything stays in sync.</p>
   </header>
 
   <main>
@@ -20,29 +20,59 @@
     <section class="controls-panel">
       <div class="card equation-card">
         <h2>Equation</h2>
-        <div class="equation-display">
-          <span class="eq-label">y</span>
-          <span class="eq-label">=</span>
-          <input type="number" id="input-m" step="0.1" class="eq-input">
-          <span class="eq-label">x</span>
-          <span class="eq-label">+</span>
-          <input type="number" id="input-b" step="0.5" class="eq-input">
+        <div class="equation-row">
+          <span class="eq-static">y&nbsp;=</span>
+          <div class="eq-field eq-field-m">
+            <input type="number" id="input-m" step="1" class="eq-input">
+            <span class="eq-var-label">m</span>
+          </div>
+          <span class="eq-static">x&nbsp;+</span>
+          <div class="eq-field eq-field-b">
+            <input type="number" id="input-b" step="1" class="eq-input">
+            <span class="eq-var-label">b</span>
+          </div>
         </div>
-        <div class="equation-formatted" id="equation-text">y = 3x &minus; 4</div>
+        <div class="equation-formatted" id="equation-text"></div>
+        <div class="equation-legend">
+          <div class="legend-item">
+            <span class="legend-swatch swatch-m"></span>
+            <span><strong>m</strong> = <span id="legend-m-val">3</span> &mdash; rate of change</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch swatch-b"></span>
+            <span><strong>b</strong> = <span id="legend-b-val">-4</span> &mdash; starting height</span>
+          </div>
+        </div>
       </div>
 
       <div class="card sliders-card">
         <h2>Sliders</h2>
         <div class="slider-row">
-          <label for="slider-m">Slope (m)</label>
-          <input type="range" id="slider-m" min="-10" max="10" step="0.1">
+          <label for="slider-m" class="slider-label-m">Slope (m)</label>
+          <input type="range" id="slider-m" min="-10" max="10" step="0.1" class="slider-m">
           <span class="slider-value" id="slider-m-value">3</span>
         </div>
         <div class="slider-row">
-          <label for="slider-b">Intercept (b)</label>
-          <input type="range" id="slider-b" min="-20" max="20" step="0.5">
+          <label for="slider-b" class="slider-label-b">Intercept (b)</label>
+          <input type="range" id="slider-b" min="-20" max="20" step="0.5" class="slider-b">
           <span class="slider-value" id="slider-b-value">-4</span>
         </div>
+      </div>
+
+      <div class="card aids-card">
+        <h2>Learning Aids</h2>
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-triangle" checked>
+          <span>Show rise / run triangle</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-steps" checked>
+          <span>Show step points</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="toggle-snap">
+          <span>Snap to integers</span>
+        </label>
       </div>
 
       <div class="card table-card">
@@ -62,6 +92,6 @@
     </section>
   </main>
 
-  <script type="module" src="js/main.js"></script>
+  <script defer src="js/app.js"></script>
 </body>
 </html>
