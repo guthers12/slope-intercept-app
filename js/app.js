@@ -151,15 +151,32 @@
     },
 
     randomize: function () {
-      var m = randInt(-5, 5);
-      var b = randInt(-8, 8);
-      var x1 = randInt(-6, -1);
-      var x2 = randInt(1, 7);
-      this._points = [
-        { x: x1, y: m * x1 + b },
-        { x: x2, y: m * x2 + b }
-      ];
-      this._m = m; this._b = b; this._r2 = 1;
+      var pad = 2;
+      var xLo = Math.ceil(viewXMin + pad);
+      var xHi = Math.floor(viewXMax - pad);
+      var yLo = Math.ceil(viewYMin + pad);
+      var yHi = Math.floor(viewYMax - pad);
+      if (xLo >= xHi || yLo >= yHi) { xLo = -6; xHi = 6; yLo = -8; yHi = 8; }
+
+      var xMid = Math.round((xLo + xHi) / 2);
+      var x1 = randInt(xLo, xMid - 1);
+      var x2 = randInt(xMid + 1, xHi);
+      if (x1 === x2) x2 = x1 + 2;
+
+      for (var attempt = 0; attempt < 20; attempt++) {
+        var m = randInt(-5, 5);
+        var b = randInt(yLo, yHi);
+        var y1 = m * x1 + b;
+        var y2 = m * x2 + b;
+        if (y1 >= yLo && y1 <= yHi && y2 >= yLo && y2 <= yHi) {
+          this._points = [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+          this._m = m; this._b = b; this._r2 = 1;
+          this._notify('reset');
+          return;
+        }
+      }
+      this._points = [{ x: x1, y: 0 }, { x: x2, y: 0 }];
+      this._m = 0; this._b = 0; this._r2 = 1;
       this._notify('reset');
     },
 

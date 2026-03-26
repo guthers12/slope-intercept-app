@@ -123,11 +123,6 @@ main {
   font-style: italic;
 }
 
-.eq-dot {
-  text-align: left;
-  padding-left: 0.1rem;
-}
-
 .color-m { color: var(--color-m); }
 .color-b { color: var(--color-b); }
 
