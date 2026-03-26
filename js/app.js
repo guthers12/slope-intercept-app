@@ -605,10 +605,10 @@
 
   function applySnapSettings() {
     var snap = state.snapToInt;
-    sliderM.step = snap ? '1' : '0.1';
-    sliderB.step = snap ? '1' : '0.1';
-    inputM.step  = snap ? '1' : '0.1';
-    inputB.step  = snap ? '1' : '0.1';
+    sliderM.step = snap ? '1' : 'any';
+    sliderB.step = snap ? '1' : 'any';
+    inputM.step  = snap ? '1' : 'any';
+    inputB.step  = snap ? '1' : 'any';
   }
 
   function snapZero(v, threshold) {
