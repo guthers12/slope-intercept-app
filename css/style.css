@@ -100,54 +100,55 @@ main {
   margin-bottom: 0.65rem;
 }
 
-/* ---- Equation Card ---- */
+/* ---- Equation Card (grid-aligned) ---- */
 
-.equation-template {
-  font-size: 1.15rem;
-  font-weight: 700;
-  text-align: center;
-  padding: 0.2rem 0 0.5rem;
-  letter-spacing: 0.03em;
-  color: var(--text-secondary);
-}
-
-.equation-template .color-m { color: var(--color-m); font-size: 1.2rem; }
-.equation-template .color-b { color: var(--color-b); font-size: 1.2rem; }
-
-.equation-row {
-  display: flex;
+.equation-grid {
+  display: grid;
+  grid-template-columns: auto auto 4.5rem auto auto 4.5rem;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.2rem 0.35rem;
   margin-bottom: 0.5rem;
 }
 
-.eq-static {
-  font-size: 1.15rem;
-  font-weight: 600;
-  line-height: 2.4rem;
+.eq-cell {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
   white-space: nowrap;
 }
 
-.eq-field {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.eq-var-slot {
+  font-size: 1.15rem;
+  font-style: italic;
 }
 
-.eq-field .eq-input {
-  width: 4.5rem;
-  padding: 0.35rem 0.4rem;
+.eq-dot {
+  text-align: left;
+  padding-left: 0.1rem;
+}
+
+.color-m { color: var(--color-m); }
+.color-b { color: var(--color-b); }
+
+.eq-input-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.eq-input {
+  width: 100%;
+  padding: 0.3rem 0.3rem;
   border: 2px solid var(--border);
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   text-align: center;
   transition: border-color 0.15s;
   background: #fff;
 }
 
-.eq-field .eq-input:focus {
+.eq-input:focus {
   outline: none;
 }
 
@@ -359,7 +360,7 @@ main {
 
 .table-fit-info {
   font-size: 0.78rem;
-  color: var(--color-m);
+  color: var(--color-offline);
   margin-top: 0.5rem;
   opacity: 0;
   transition: opacity 0.2s;

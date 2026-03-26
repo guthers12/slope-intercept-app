@@ -28,32 +28,6 @@
     return { m: round(m, 4), b: round(b, 4), r2: round(r2, 6) };
   }
 
-  /** Least-squares line constrained to pass through points[fixedIdx]. */
-  function constrainedRegression(points, fixedIdx) {
-    var n = points.length;
-    if (n < 2) return null;
-    var x0 = points[fixedIdx].x, y0 = points[fixedIdx].y;
-
-    if (n === 2) {
-      var other = fixedIdx === 0 ? 1 : 0;
-      var dx = points[other].x - x0;
-      if (Math.abs(dx) < 1e-12) return null;
-      var m = (points[other].y - y0) / dx;
-      return { m: round(m, 4), b: round(y0 - m * x0, 4) };
-    }
-
-    var sumDxDy = 0, sumDx2 = 0;
-    for (var i = 0; i < n; i++) {
-      var ddx = points[i].x - x0;
-      var ddy = points[i].y - y0;
-      sumDxDy += ddx * ddy;
-      sumDx2 += ddx * ddx;
-    }
-    if (Math.abs(sumDx2) < 1e-12) return null;
-    var mC = sumDxDy / sumDx2;
-    return { m: round(mC, 4), b: round(y0 - mC * x0, 4) };
-  }
-
   function round(v, d) {
     var f = Math.pow(10, d);
     return Math.round(v * f) / f;
@@ -80,10 +54,8 @@
   // ============================================================
 
   var DEFAULT_POINTS = [
-    { x: -3, y: -13 },
-    { x:  2, y:   2 },
-    { x:  7, y:  17 },
-    { x: 12, y:  32 }
+    { x: -1, y: -7 },
+    { x:  3, y:  5 }
   ];
 
   var state = {
@@ -133,16 +105,32 @@
       this._notify(source || 'table');
     },
 
-    /** Move a point and fit the line through it (constrained regression). */
+    /**
+     * Move a point. The line is defined by the dragged point and the
+     * farthest other point (by x-distance), so endpoints anchor each
+     * other and middle points are the ones that go off-line.
+     */
     movePoint: function (index, x, y) {
       x = snapVal(x);
       y = snapVal(y);
       this._points[index] = { x: round(x, 2), y: round(y, 2) };
-      var reg = constrainedRegression(this._points, index);
-      if (reg) {
-        this._m = reg.m;
-        this._b = reg.b;
+
+      var anchorIdx = -1, maxDist = -1;
+      for (var i = 0; i < this._points.length; i++) {
+        if (i === index) continue;
+        var dist = Math.abs(this._points[i].x - x);
+        if (dist > maxDist) { maxDist = dist; anchorIdx = i; }
       }
+
+      if (anchorIdx >= 0) {
+        var anchor = this._points[anchorIdx];
+        var dx = x - anchor.x;
+        if (Math.abs(dx) > 0.001) {
+          this._m = round((y - anchor.y) / dx, 4);
+          this._b = round(anchor.y - this._m * anchor.x, 4);
+        }
+      }
+
       var fullReg = linearRegression(this._points);
       this._r2 = fullReg ? fullReg.r2 : 1;
       this._notify('drag');
@@ -164,18 +152,14 @@
 
     randomize: function () {
       var m = randInt(-5, 5);
-      var b = randInt(-10, 10);
-      var xs = [];
-      var used = {};
-      while (xs.length < 4) {
-        var x = randInt(-8, 12);
-        if (!used[x]) { used[x] = true; xs.push(x); }
-      }
-      xs.sort(function (a, c) { return a - c; });
-      this._points = xs.map(function (x) { return { x: x, y: m * x + b }; });
-      this._m = m;
-      this._b = b;
-      this._r2 = 1;
+      var b = randInt(-8, 8);
+      var x1 = randInt(-6, -1);
+      var x2 = randInt(1, 7);
+      this._points = [
+        { x: x1, y: m * x1 + b },
+        { x: x2, y: m * x2 + b }
+      ];
+      this._m = m; this._b = b; this._r2 = 1;
       this._notify('reset');
     },
 
@@ -203,7 +187,7 @@
   var POINT_HIT    = 18;
 
   var canvas, ctx, width, height;
-  var viewXMin = -16, viewXMax = 16, viewYMin = -35, viewYMax = 38;
+  var viewXMin = -12, viewXMax = 12, viewYMin = -12, viewYMax = 12;
 
   var draggingIdx = -1;
 
@@ -216,6 +200,7 @@
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseup', onUp);
     canvas.addEventListener('mouseleave', onUp);
+    canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
     canvas.addEventListener('touchend', onUp);
@@ -244,6 +229,28 @@
       mx: viewXMin + sx / width * (viewXMax - viewXMin),
       my: viewYMin + (1 - sy / height) * (viewYMax - viewYMin)
     };
+  }
+
+  // ---- Zoom ----
+
+  function onWheel(e) {
+    e.preventDefault();
+    var sc = screenCoords(e);
+    var mc = toMath(sc.sx, sc.sy);
+    var factor = e.deltaY > 0 ? 1.12 : 1 / 1.12;
+
+    var newXMin = mc.mx + (viewXMin - mc.mx) * factor;
+    var newXMax = mc.mx + (viewXMax - mc.mx) * factor;
+    var newYMin = mc.my + (viewYMin - mc.my) * factor;
+    var newYMax = mc.my + (viewYMax - mc.my) * factor;
+
+    var xRange = newXMax - newXMin;
+    var yRange = newYMax - newYMin;
+    if (xRange < 4 || yRange < 4 || xRange > 200 || yRange > 200) return;
+
+    viewXMin = newXMin; viewXMax = newXMax;
+    viewYMin = newYMin; viewYMax = newYMax;
+    draw();
   }
 
   function draw() {
@@ -336,9 +343,7 @@
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    var label = 'b = ' + fmtN(b);
-    ctx.font = 'bold 12px system-ui, sans-serif';
-    drawLabelWithBG(label, s.sx + 14, s.sy, 'left', 'middle', COLOR_B);
+    drawLabelWithBG('b = ' + fmtN(b), s.sx + 14, s.sy, 'left', 'middle', COLOR_B);
   }
 
   // ---- Rise / Run triangle ----
@@ -347,12 +352,9 @@
     var m = state.m, b = state.b;
     if (Math.abs(m) < 0.001) return;
 
-    var x0 = 0, y0 = b;
-    var x1 = 1, y1 = b + m;
-
-    var sA = toScreen(x0, y0);
-    var sB = toScreen(x1, y0);
-    var sC = toScreen(x1, y1);
+    var sA = toScreen(0, b);
+    var sB = toScreen(1, b);
+    var sC = toScreen(1, b + m);
 
     ctx.setLineDash([5, 4]);
     ctx.lineWidth = 2.5;
@@ -374,19 +376,15 @@
 
     var runLabelY = sA.sy + (m > 0 ? 16 : -10);
     drawLabelWithBG('run = 1', (sA.sx + sB.sx) / 2, runLabelY, 'center', m > 0 ? 'top' : 'bottom', COLOR_B);
-
     drawLabelWithBG('rise = ' + fmtN(m), sB.sx + 6, (sB.sy + sC.sy) / 2, 'left', 'middle', COLOR_M);
   }
 
-  /** Draw text with a semi-opaque white background for readability. */
   function drawLabelWithBG(text, x, y, align, baseline, color) {
     ctx.font = 'bold 12px system-ui, sans-serif';
     ctx.textAlign = align;
     ctx.textBaseline = baseline;
-    var metrics = ctx.measureText(text);
-    var tw = metrics.width;
-    var th = 14;
-    var px = 3, py = 2;
+    var tw = ctx.measureText(text).width;
+    var th = 14, px = 4, py = 3;
 
     var bx = x - px;
     if (align === 'center') bx = x - tw / 2 - px;
@@ -395,7 +393,7 @@
     if (baseline === 'top') by = y - py;
     else if (baseline === 'bottom') by = y - th - py;
 
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
     ctx.fillRect(bx, by, tw + px * 2, th + py * 2);
 
     ctx.fillStyle = color;
@@ -415,7 +413,6 @@
       var y = m * x + b;
       if (y < viewYMin || y > viewYMax) continue;
       var s = toScreen(x, y);
-
       ctx.save();
       ctx.translate(s.sx, s.sy);
       ctx.rotate(Math.PI / 4);
@@ -622,7 +619,7 @@
 
     var r2 = state.r2;
     if (r2 < 0.9999) {
-      fitInfo.textContent = 'Best fit (R\u00B2 = ' + round(r2, 4) + ') \u2014 points are not perfectly collinear';
+      fitInfo.textContent = 'Gray dots are no longer on the line';
       fitInfo.classList.add('visible');
     } else {
       fitInfo.textContent = '';
