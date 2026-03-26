@@ -605,10 +605,10 @@
 
   function applySnapSettings() {
     var snap = state.snapToInt;
-    sliderM.step = snap ? '1' : 'any';
-    sliderB.step = snap ? '1' : 'any';
-    inputM.step  = snap ? '1' : 'any';
-    inputB.step  = snap ? '1' : 'any';
+    sliderM.step = snap ? '1' : '0.1';
+    sliderB.step = snap ? '1' : '0.1';
+    inputM.step  = snap ? '1' : '0.1';
+    inputB.step  = snap ? '1' : '0.1';
   }
 
   function snapZero(v, threshold) {
@@ -619,18 +619,18 @@
     var m = state.m, b = state.b;
 
     if (source !== 'equation') {
-      inputM.value = round(m, 2);
-      inputB.value = round(b, 2);
+      inputM.value = round(m, 1);
+      inputB.value = round(b, 1);
     }
     if (source !== 'slider') {
       sliderM.value = m;
       sliderB.value = b;
     }
-    sliderMVal.textContent = round(m, 2);
-    sliderBVal.textContent = round(b, 2);
+    sliderMVal.textContent = round(m, 1);
+    sliderBVal.textContent = round(b, 1);
 
-    legendMVal.textContent = round(m, 2);
-    legendBVal.textContent = round(b, 2);
+    legendMVal.textContent = round(m, 1);
+    legendBVal.textContent = round(b, 1);
 
     if (source !== 'table-cell') renderTable();
 
@@ -657,7 +657,7 @@
 
         var tdX = document.createElement('td');
         var inX = document.createElement('input');
-        inX.type = 'number'; inX.value = round(p.x, 2);
+        inX.type = 'number'; inX.value = round(p.x, 1);
         inX.className = 'table-input';
         inX.step = state.snapToInt ? '1' : 'any';
         inX.addEventListener('change', function () { onCellEdit(idx, 'x', this.value); });
@@ -665,7 +665,7 @@
 
         var tdY = document.createElement('td');
         var inY = document.createElement('input');
-        inY.type = 'number'; inY.value = round(p.y, 2);
+        inY.type = 'number'; inY.value = round(p.y, 1);
         inY.className = 'table-input';
         inY.step = state.snapToInt ? '1' : 'any';
         inY.addEventListener('change', function () { onCellEdit(idx, 'y', this.value); });
